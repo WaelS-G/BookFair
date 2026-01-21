@@ -10,17 +10,14 @@ function updateStatus() {
     const mapMsg = document.getElementById('offlineMapMsg');
     const mapFrame = document.getElementById('mapFrame');
     const mapImg = document.getElementById('mapImage');
-    
     if (navigator.onLine) {
         stat.innerText = "متصل"; stat.className = "online";
         if(mapMsg) mapMsg.style.display = 'none';
         mapFrame.style.display = 'block'; mapImg.style.display = 'none';
     } else {
         stat.innerText = "غير متصل"; stat.className = "offline";
-        // Offline Logic: Try to load local image
-        mapFrame.style.display = 'none';
-        mapImg.style.display = 'block';
-        if(mapMsg) mapMsg.style.display = 'none'; // Hide text if image loads
+        mapFrame.style.display = 'none'; mapImg.style.display = 'block';
+        if(mapMsg) mapMsg.style.display = 'none';
     }
 }
 window.addEventListener('online', updateStatus);
@@ -62,12 +59,10 @@ function handleSearch() {
         }
 
         const normName = normalizeArabic(store.name);
-        
         if (normName.includes(q)) {
             results.push({ type: 'store', data: store, isGold: (q.length > 0) });
             continue; 
         }
-
         if (q.length > 2) { 
             const matchingBooks = store.books.filter(b => 
                 normalizeArabic(b.title).includes(q) || normalizeArabic(b.author).includes(q)
@@ -174,7 +169,7 @@ function renderBooks(books, highlightTitle) {
     filterAndRender(bookSearch.value);
 }
 
-// --- NEW PHYSICS-BASED MAP ENGINE ---
+// --- MAP ENGINE ---
 const mapUrls = {
     1: "https://bookfair.gebo.gov.eg/Drawingkit/HallPartitionsView.aspx?HID=73",
     2: "https://bookfair.gebo.gov.eg/Drawingkit/HallPartitionsView.aspx?HID=74",
@@ -183,57 +178,64 @@ const mapUrls = {
     5: "https://bookfair.gebo.gov.eg/Drawingkit/HallPartitionsView.aspx?HID=71"
 };
 
-// Physics State
-let state = {
-    x: 0, y: 0, scale: 1,
-    isDragging: false,
-    startX: 0, startY: 0,
-    pointers: [] // For multi-touch
-};
+let state = { x: 0, y: 0, scale: 1, isDragging: false, startX: 0, startY: 0, pointers: [] };
+let interactionEnabled = false;
 
 const viewport = document.getElementById('mapViewport');
 const content = document.getElementById('mapContent');
 const frame = document.getElementById('mapFrame');
 const img = document.getElementById('mapImage');
+const interactBtn = document.getElementById('interactBtn');
 
-// Helper to get distance between two touch points
+function toggleMapInteraction() {
+    interactionEnabled = !interactionEnabled;
+    if (interactionEnabled) {
+        // DISABLE Physics / ENABLE Browser Native
+        viewport.classList.add('interactive');
+        interactBtn.classList.add('active');
+        showToast("يمكنك الآن الكتابة والضغط داخل الخريطة");
+    } else {
+        // ENABLE Physics
+        viewport.classList.remove('interactive');
+        interactBtn.classList.remove('active');
+        showToast("وضع التحريك والتكبير");
+    }
+}
+
 function getDist(p1, p2) {
     return Math.sqrt(Math.pow(p1.clientX - p2.clientX, 2) + Math.pow(p1.clientY - p2.clientY, 2));
 }
 
-// Pointer Events (Unified Mouse/Touch)
+// Physics Handlers
 viewport.addEventListener('pointerdown', (e) => {
+    if (interactionEnabled) return; // Let browser handle it
     e.preventDefault();
+    viewport.setPointerCapture(e.pointerId);
     state.pointers.push(e);
     
     if (state.pointers.length === 1) {
-        // Start Drag
         state.isDragging = true;
         state.startX = e.clientX - state.x;
         state.startY = e.clientY - state.y;
     } else if (state.pointers.length === 2) {
-        // Start Pinch
-        state.isDragging = false; // Disable drag during pinch
+        state.isDragging = false;
         state.startDist = getDist(state.pointers[0], state.pointers[1]);
         state.startScale = state.scale;
     }
 });
 
 viewport.addEventListener('pointermove', (e) => {
+    if (interactionEnabled) return;
     e.preventDefault();
-    
-    // Update pointer cache
     const idx = state.pointers.findIndex(p => p.pointerId === e.pointerId);
     if (idx !== -1) state.pointers[idx] = e;
 
     if (state.pointers.length === 2) {
-        // Pinch Zoom
         const currDist = getDist(state.pointers[0], state.pointers[1]);
         const scaleDiff = currDist / state.startDist;
         state.scale = Math.max(0.5, Math.min(state.startScale * scaleDiff, 4));
         updateTransform();
     } else if (state.pointers.length === 1 && state.isDragging) {
-        // Drag Pan
         state.x = e.clientX - state.startX;
         state.y = e.clientY - state.startY;
         updateTransform();
@@ -243,10 +245,8 @@ viewport.addEventListener('pointermove', (e) => {
 function removePointer(e) {
     const idx = state.pointers.findIndex(p => p.pointerId === e.pointerId);
     if (idx !== -1) state.pointers.splice(idx, 1);
-    
     if (state.pointers.length === 0) state.isDragging = false;
     if (state.pointers.length === 1) {
-        // Resume dragging if one finger left
         state.isDragging = true;
         state.startX = state.pointers[0].clientX - state.x;
         state.startY = state.pointers[0].clientY - state.y;
@@ -257,8 +257,8 @@ viewport.addEventListener('pointerup', removePointer);
 viewport.addEventListener('pointercancel', removePointer);
 viewport.addEventListener('pointerleave', removePointer);
 
-// Mouse Wheel Zoom
 viewport.addEventListener('wheel', (e) => {
+    if (interactionEnabled) return;
     e.preventDefault();
     const delta = e.deltaY > 0 ? -0.1 : 0.1;
     zoomMap(delta);
@@ -269,29 +269,31 @@ function updateTransform() {
 }
 
 function resetMap() {
-    // Reset to "Fit Screen" logic
     const nativeW = 1000;
     const nativeH = 1200;
     
-    // Set content size
     content.style.width = `${nativeW}px`;
     content.style.height = `${nativeH}px`;
     frame.style.width = '100%'; frame.style.height = '100%';
     img.style.width = '100%'; img.style.height = '100%';
 
-    // Calculate Fit Scale
     const availW = viewport.clientWidth;
     const availH = viewport.clientHeight;
     const scaleX = availW / nativeW;
     const scaleY = availH / nativeH;
     
-    state.scale = Math.min(scaleX, scaleY) * 0.95; // 95% fit
+    state.scale = Math.min(scaleX, scaleY) * 0.95;
     
     // Center it
     state.x = (availW - (nativeW * state.scale)) / 2;
     state.y = (availH - (nativeH * state.scale)) / 2;
     
     updateTransform();
+    
+    // Disable interaction mode on reset
+    interactionEnabled = false;
+    viewport.classList.remove('interactive');
+    interactBtn.classList.remove('active');
 }
 
 function zoomMap(delta) {
@@ -300,7 +302,6 @@ function zoomMap(delta) {
     updateTransform();
 }
 
-// Map Switching
 function parseLocation(locString) {
     if (!locString) return { hall: 1, section: '' };
     const hallMatch = locString.match(/(?:صالة|Hall)\s*(\d+)/i);
@@ -324,7 +325,6 @@ function switchMap(hallNum) {
     document.querySelectorAll('.map-tab').forEach(t => t.classList.remove('active'));
     document.querySelectorAll('.map-tab')[hallNum-1].classList.add('active');
 
-    // Offline Handling
     if (navigator.onLine) {
         img.style.display = 'none';
         frame.style.display = 'block';
@@ -335,10 +335,9 @@ function switchMap(hallNum) {
             setTimeout(resetMap, 100);
         }
     } else {
-        // OFFLINE: Try to load local image
         frame.style.display = 'none';
         img.style.display = 'block';
-        img.src = `maps/hall${hallNum}.jpg`; // User must save images here
+        img.src = `maps/hall${hallNum}.jpg`; 
         img.onload = resetMap;
     }
 }
