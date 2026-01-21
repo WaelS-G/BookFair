@@ -4,9 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Cairo International Book Fair Wizard</title>
-    
     <link rel="icon" type="image/png" href="https://cdn-icons-png.flaticon.com/512/3389/3389081.png">
-    
     <link rel="stylesheet" href="style.css">
     <link rel="manifest" href="manifest.json">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -29,7 +27,6 @@
                 <i class="fa-solid fa-search search-icon"></i>
                 <input type="text" id="searchInput" placeholder="ابحث عن كتاب، مؤلف، أو دار نشر..." autocomplete="off">
             </div>
-            
             <div class="filters-scroll">
                 <button class="filter-btn active" data-filter="all">الكل</button>
                 <button class="filter-btn" data-filter="1">صالة 1</button>
@@ -44,19 +41,16 @@
             <span id="resultsCount">0</span> نتيجة | <span id="connectionStatus" class="online">متصل</span>
         </section>
 
-        <div id="resultsGrid" class="grid-container">
-            </div>
+        <div id="resultsGrid" class="grid-container"></div>
 
         <footer class="copyright-footer">
             Designed & Developed by <span class="copyright-name">Wael Sayed</span>
         </footer>
-        
-        <div style="text-align: center; margin-top: 10px; opacity: 0.7;">
+
+        <div style="text-align: center; margin-top: 10px; opacity: 0.7; margin-bottom: 20px;">
             <script language="JavaScript" type="text/javascript" src="https://gnrcounter.com/counter.php?accId=049abb86844bf798baf165dfda28fd0f"></script>
-            <noscript>
-            <a href="https://gnrcounter.com" title="Web Analytics">Web Analytics</a>
-            </noscript>
-            </div>
+            <noscript><a href="https://gnrcounter.com" title="Web Analytics">Web Analytics</a></noscript>
+        </div>
     </main>
 
     <div id="storeModal" class="modal">
@@ -65,7 +59,6 @@
                 <h2 id="modalStoreName" style="font-size:1rem;">اسم الدار</h2>
                 <button class="close-btn">&times;</button>
             </div>
-            
             <div class="store-meta-bar">
                 <div class="meta-item" id="modalStoreLoc" onclick="openMapToLocation(this.dataset.loc)">
                     <i class="fa-solid fa-location-dot"></i> <span id="modalLocText">-</span>
@@ -74,11 +67,9 @@
                     <i class="fa-solid fa-book"></i> <span id="modalBookCount">0</span>
                 </div>
             </div>
-
             <div class="modal-search">
                 <input type="text" id="bookSearchInput" placeholder="بحث داخل المتجر...">
             </div>
-
             <div id="booksGrid" class="books-list"></div>
         </div>
     </div>
@@ -89,7 +80,6 @@
                 <h2>الخريطة</h2>
                 <button class="close-btn" onclick="closeMap()">&times;</button>
             </div>
-            
             <div class="map-tabs">
                 <button class="map-tab active" onclick="switchMap(1)">صالة 1</button>
                 <button class="map-tab" onclick="switchMap(2)">صالة 2</button>
@@ -98,19 +88,22 @@
                 <button class="map-tab" onclick="switchMap(5)">صالة 5</button>
             </div>
 
-            <div class="map-container">
-                <iframe id="mapFrame" src="" class="map-frame"></iframe>
-                
-                <div class="map-controls">
-                    <button class="map-ctrl-btn" onclick="zoomMap(0.2)"><i class="fa-solid fa-plus"></i></button>
-                    <button class="map-ctrl-btn" onclick="fitMapToScreen()"><i class="fa-solid fa-compress"></i></button>
-                    <button class="map-ctrl-btn" onclick="zoomMap(-0.2)"><i class="fa-solid fa-minus"></i></button>
+            <div class="map-viewport" id="mapViewport">
+                <div class="map-content" id="mapContent">
+                    <iframe id="mapFrame" class="map-layer" src=""></iframe>
+                    <img id="mapImage" class="map-layer" style="display:none;" alt="Offline Map">
                 </div>
+            </div>
 
-                <div id="offlineMapMsg" class="offline-map" style="display:none">
-                    <i class="fa-solid fa-wifi"></i>
-                    <p>الخريطة غير متاحة بدون إنترنت</p>
-                </div>
+            <div class="map-controls">
+                <button class="map-ctrl-btn" onclick="zoomMap(0.2)"><i class="fa-solid fa-plus"></i></button>
+                <button class="map-ctrl-btn" onclick="resetMap()"><i class="fa-solid fa-compress"></i></button>
+                <button class="map-ctrl-btn" onclick="zoomMap(-0.2)"><i class="fa-solid fa-minus"></i></button>
+            </div>
+            
+            <div id="offlineMapMsg" class="offline-map" style="display:none">
+                <i class="fa-solid fa-wifi"></i>
+                <p>الإنترنت مقطوع. لتعمل الخريطة، احفظ صور الصالات في مجلد maps باسم hall1.jpg</p>
             </div>
         </div>
     </div>
