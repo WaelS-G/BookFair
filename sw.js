@@ -1,4 +1,4 @@
-const CACHE_NAME = 'cibf-wizard-v3';
+const CACHE_NAME = 'cibf-wizard-v4';
 const ASSETS = [
     './',
     './index.html',
